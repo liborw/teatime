@@ -6,6 +6,8 @@ use lazy_static::lazy_static;
 use chrono::{NaiveDate, Datelike};
 use regex::Regex;
 
+use std::process::Command;
+
 use teatime::duration::Duration;
 use teatime::cli::{Cli, EditArgs, LogArgs, ReportArgs, Action};
 
@@ -13,6 +15,27 @@ use teatime::cli::{Cli, EditArgs, LogArgs, ReportArgs, Action};
 enum Tag {
     Label(String),
 }
+
+impl Tag {
+
+    fn new_label(value: String) -> Tag {
+        Tag::Label(value)
+    }
+
+    /// Find tags in a text
+    fn find(s: &str) -> impl Iterator<Item=Tag> + '_ {
+
+        lazy_static! {
+            static ref RE: Regex = Regex::new(r"@(?P<label>\w+)(\((?P<value>\w+)?\))?").unwrap();
+        }
+
+        RE.captures_iter(s)
+            .map(|c| {
+                Tag::new_label(c.name("label").unwrap().as_str().to_owned())
+            })
+    }
+}
+
 
 #[derive(Clone, Debug)]
 struct Entry {
@@ -25,14 +48,7 @@ struct Entry {
 impl Entry {
 
     fn new(date: NaiveDate, duration: Duration, note: String) -> Self {
-        lazy_static! {
-            static ref RE: Regex = Regex::new(r"@(?P<label>\w+)(\((?P<value>\w+)?\))?").unwrap();
-        }
-
-        let mut tags: Vec<Tag> = Vec::new();
-        for cap in RE.captures_iter(note.as_str()) {
-            tags.push(Tag::Label(cap.name("label").unwrap().as_str().to_owned()));
-        }
+        let tags: Vec<Tag> = Tag::find(&note).collect();
         Entry { date, duration, note, tags }
     }
 
@@ -82,7 +98,6 @@ fn today() -> NaiveDate {
     NaiveDate::from_ymd_opt(date.year(), date.month(), date.day()).unwrap()
 }
 
-use std::process::Command;
 
 
 fn action_edit(args: EditArgs) {
