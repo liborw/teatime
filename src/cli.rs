@@ -58,7 +58,7 @@ pub struct ReportArgs {
     pub to: Option<NaiveDate>,
 
     #[arg(short, long)]
-    pub tags: Vec<String>,
+    pub tags: String,
 }
 
 fn parse_duration(arg: &str) -> Result<Duration, ParseDurationError> {

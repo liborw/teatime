@@ -34,6 +34,7 @@ impl Tag {
                 Tag::new_label(c.name("label").unwrap().as_str().to_owned())
             })
     }
+
 }
 
 
@@ -136,6 +137,8 @@ fn report_action(args: ReportArgs, db: &File) {
         // filter out entries out of given range
         .filter(|e| e.date > args.from.unwrap_or(NaiveDate::default()))
         .filter(|e| e.date <= args.from.unwrap_or(today()))
+        // Filter by tag
+        .filter(|e| e.tags.contains(&Tag::new_label(args.tags.clone())))
         .collect();
 
     entries.sort_by_key(|e| e.date);
