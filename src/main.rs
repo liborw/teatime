@@ -1,41 +1,18 @@
 
 use std::{str::FromStr, num::ParseIntError, fs::{self, File, OpenOptions}, io::{Write, self, BufRead}, fmt};
 use clap::Parser;
+use itertools::Itertools;
 use lazy_static::lazy_static;
 
-use chrono::{NaiveDate, Datelike};
+use chrono::{NaiveDate, Datelike, Weekday, NaiveWeek, Month};
 use regex::Regex;
 
 use std::process::Command;
 
-use teatime::duration::Duration;
+use teatime::{duration::Duration, cli::GroupBy};
 use teatime::cli::{Cli, EditArgs, LogArgs, ReportArgs, Action};
+use teatime::tag::Tag;
 
-#[derive(Clone, Debug, Eq, Hash, PartialEq)]
-enum Tag {
-    Label(String),
-}
-
-impl Tag {
-
-    fn new_label(value: String) -> Tag {
-        Tag::Label(value)
-    }
-
-    /// Find tags in a text
-    fn find(s: &str) -> impl Iterator<Item=Tag> + '_ {
-
-        lazy_static! {
-            static ref RE: Regex = Regex::new(r"@(?P<label>\w+)(\((?P<value>\w+)?\))?").unwrap();
-        }
-
-        RE.captures_iter(s)
-            .map(|c| {
-                Tag::new_label(c.name("label").unwrap().as_str().to_owned())
-            })
-    }
-
-}
 
 
 #[derive(Clone, Debug)]
@@ -138,7 +115,7 @@ fn report_action(args: ReportArgs, db: &File) {
         .filter(|e| e.date > args.from.unwrap_or(NaiveDate::default()))
         .filter(|e| e.date <= args.from.unwrap_or(today()))
         // Filter by tag
-        .filter(|e| e.tags.contains(&Tag::new_label(args.tags.clone())))
+        .filter(|e| args.tags.iter().all(|l| e.tags.contains(l)))
         .collect();
 
     entries.sort_by_key(|e| e.date);
@@ -146,7 +123,7 @@ fn report_action(args: ReportArgs, db: &File) {
         // print all entries in range
         .map(|e| {println!("{e}"); e})
         .fold(Duration::zero(), |d, e| d + e.duration);
-    println!("{total_d}")
+    println!("Total duration: {total_d}")
 }
 
 fn log_action(args: LogArgs, db: &mut File) {
