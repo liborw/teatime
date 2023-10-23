@@ -1,7 +1,6 @@
 
 use std::{str::FromStr, num::ParseIntError, fs::{self, File, OpenOptions}, io::{Write, self, BufRead}, fmt};
 use clap::Parser;
-use itertools::Itertools;
 use lazy_static::lazy_static;
 
 use chrono::{NaiveDate, Datelike, Weekday, NaiveWeek, Month};
@@ -9,9 +8,9 @@ use regex::Regex;
 
 use std::process::Command;
 
-use teatime::{duration::Duration, cli::GroupBy};
+use teatime::duration::Duration;
 use teatime::cli::{Cli, EditArgs, LogArgs, ReportArgs, Action};
-use teatime::tag::Tag;
+use teatime::tag::{Tag, Tags};
 
 
 
@@ -20,13 +19,13 @@ struct Entry {
     date: NaiveDate,
     duration: Duration,
     note: String,
-    tags: Vec<Tag>
+    tags: Tags
 }
 
 impl Entry {
 
     fn new(date: NaiveDate, duration: Duration, note: String) -> Self {
-        let tags: Vec<Tag> = Tag::find(&note).collect();
+        let tags = Tags::from_vec(Tag::find(&note).collect());
         Entry { date, duration, note, tags }
     }
 
@@ -106,6 +105,9 @@ fn action_edit(args: EditArgs) {
 
 fn report_action(args: ReportArgs, db: &File) {
 
+    dbg!(&args.all);
+
+
     let mut entries: Vec<_> = io::BufReader::new(db).lines()
         // filter empty lines
         .filter_map(|l| l.ok())
@@ -115,7 +117,7 @@ fn report_action(args: ReportArgs, db: &File) {
         .filter(|e| e.date > args.from.unwrap_or(NaiveDate::default()))
         .filter(|e| e.date <= args.from.unwrap_or(today()))
         // Filter by tag
-        .filter(|e| args.tags.iter().all(|l| e.tags.contains(l)))
+        .filter(|e| args.all.contains_all(&e.tags))
         .collect();
 
     entries.sort_by_key(|e| e.date);

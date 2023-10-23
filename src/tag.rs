@@ -51,6 +51,7 @@ impl FromStr for Tag {
     }
 }
 
+#[derive(Debug, Clone, Default)]
 pub struct Tags(pub Vec<Tag>);
 
 
@@ -67,6 +68,42 @@ impl Display for ParseTagsError {
     }
 }
 
+impl Tags {
+    pub fn iter(self: &Self) -> impl Iterator<Item=&Tag> {
+        self.0.iter()
+    }
+
+    pub fn push(self: &mut Self, tag: Tag) {
+        self.0.push(tag)
+    }
+
+    pub fn contains(self: &Self, tag: &Tag) -> bool {
+        self.0.contains(tag)
+    }
+
+    /// Returns true if all elements in Tags is inside given Tags
+    pub fn contains_all(self: &Self, tags: &Tags) -> bool {
+        self.iter().all(|t| tags.contains(t))
+    }
+
+    /// Return true if at least one element in Self is inside given Tags
+    pub fn contains_any(self: &Self, tags: &Tags) -> bool {
+        self.iter().any(|t| tags.contains(t))
+    }
+
+    /// Cterate Tags from Vec<Tag>
+    pub fn from_vec(tags: Vec<Tag>) -> Tags {
+        Tags(tags)
+    }
+}
+
+impl FromIterator<Tag> for Tags {
+
+    fn from_iter<I: IntoIterator<Item=Tag>>(iter: I) -> Self {
+        Tags(iter.into_iter().collect())
+    }
+
+}
 
 
 impl FromStr for Tags {

@@ -63,7 +63,10 @@ pub struct ReportArgs {
     pub to: Option<NaiveDate>,
 
     #[arg(short, long, value_parser = parse_tags)]
-    pub tags: Option<Tag>,
+    pub all: Tags,
+
+    #[arg(short, long, value_parser = parse_tags)]
+    pub any: Tags,
 
     #[arg(short, long, value_parser = parse_group_by)]
     pub group_by: Option<GroupBy>,
@@ -73,7 +76,8 @@ pub struct ReportArgs {
 pub enum GroupBy {
     Day,
     Week,
-    Month
+    Month,
+    Label
 }
 
 #[derive(Debug, Clone)]
@@ -111,7 +115,6 @@ fn parse_duration(arg: &str) -> Result<Duration, ParseDurationError> {
     Ok(arg.parse()?)
 }
 
-
-fn parse_tags(arg: &str) -> Result<Tag, ParseTagsError> {
-    Ok(Tag::from_str(arg).expect("test"))
+fn parse_tags(arg: &str) -> Result<Tags, ParseTagsError> {
+    Ok(Tags::from_str(arg)?)
 }
